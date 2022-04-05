@@ -179,100 +179,69 @@ end
 
 function balancer_functions.run(balancer_index)
     local balancer = global.balancer[balancer_index]
-    local output_lane_count = table_size(balancer.output_lanes)
     
-    if table_size(balancer.input_lanes) > 0 and output_lane_count > 0 then
-        -- get how many items are needed per lane
-        local buffer_count = #balancer.buffer
-        local gather_amount = (output_lane_count * 2) - buffer_count
-
-        local output_index = 1
-        local lanes_left = true
-        local newbuffer = {}
+    if table_size(balancer.input_lanes) > 0 and table_size(balancer.output_lanes) > 0 then
         local previous_success = balancer.last_success
         local output_lane_index, _ = next(balancer.output_lanes, balancer.last_success)
         local previous_pickup = balancer.last_pickup
         local input_lane_index, _ = next(balancer.input_lanes, balancer.last_pickup)
-        while gather_amount > 0 or output_index <= buffer_count do
+        while true do
             local item = nil
+            local input_lane = nil
             -- Input
-            if output_index <= buffer_count then -- if there are enough items in the buffer use them from there
-                item = balancer.buffer[output_index]
-            else -- if the balancer is allowed to pick up more items try to pick them up
-                local found_item = false
-                while input_lane_index do -- we check input_lane_index first because it is faster
-                    local lane = global.lanes[input_lane_index]
-                    if #lane > 0 then
+            while input_lane_index do -- we check input_lane_index first because it is faster
+                input_lane = global.lanes[input_lane_index]
+                if #input_lane > 0 then
+                    -- remove item from lane and add to buffer
+                    item = input_lane[1]
+                    goto output
+                end
+                input_lane_index, _ = next(balancer.input_lanes, input_lane_index)
+            end
+            if previous_pickup then
+                input_lane_index, _ = next(balancer.input_lanes)
+                while input_lane_index and input_lane_index <= previous_pickup do
+                    input_lane = global.lanes[input_lane_index]
+                    if #input_lane > 0 then
                         -- remove item from lane and add to buffer
-                        local lua_item = lane[1]
-                        local simple_item = convert_LuaItemStack_to_SimpleItemStack(lua_item)
-                        lane.remove_item(lua_item)
-                        item = simple_item
-                        gather_amount = gather_amount - 1
-                        found_item = true
-                        balancer.last_pickup = input_lane_index
+                        item = input_lane[1]
                         goto output
                     end
                     input_lane_index, _ = next(balancer.input_lanes, input_lane_index)
                 end
-                if previous_pickup then
-                    input_lane_index, _ = next(balancer.input_lanes)
-                    while input_lane_index and input_lane_index <= previous_pickup do
-                        local lane = global.lanes[input_lane_index]
-                        if #lane > 0 then
-                            -- remove item from lane and add to buffer
-                            local lua_item = lane[1]
-                            local simple_item = convert_LuaItemStack_to_SimpleItemStack(lua_item)
-                            lane.remove_item(lua_item)
-                            item = simple_item
-                            gather_amount = gather_amount - 1
-                            found_item = true
-                            balancer.last_pickup = input_lane_index
-                            goto output
-                        end
-                        input_lane_index, _ = next(balancer.input_lanes, input_lane_index)
-                    end
-                end
-                break -- if no item was found then don't try to use it and give up
             end
+            break -- if no item was found then don't try to use it and give up
             -- Output
             ::output::
-            if lanes_left then -- if we haven't run out of lanes to check
-                --log("trying to place")
-                
-                while output_lane_index do -- we check output_lane_index first because it is faster
+            while output_lane_index do -- we check output_lane_index first because it is faster
+                local lane = global.lanes[output_lane_index]
+                if lane.can_insert_at_back() and lane.insert_at_back(item) then
+                    balancer.last_success = output_lane_index
+                    input_lane.remove_item(item)
+                    balancer.last_pickup = input_lane_index
+                    input_lane_index, _ = next(balancer.input_lanes, input_lane_index)
+                    goto post_output
+                end
+                output_lane_index, _ = next(balancer.output_lanes, output_lane_index)
+            end
+            if previous_success then
+                output_lane_index, _ = next(balancer.output_lanes)
+                while output_lane_index and output_lane_index <= previous_success do
                     local lane = global.lanes[output_lane_index]
                     if lane.can_insert_at_back() and lane.insert_at_back(item) then
                         balancer.last_success = output_lane_index
+                        input_lane.remove_item(item)
+                        balancer.last_pickup = input_lane_index
+                        input_lane_index, _ = next(balancer.input_lanes, input_lane_index)
                         goto post_output
                     end
                     output_lane_index, _ = next(balancer.output_lanes, output_lane_index)
                 end
-                if previous_success then
-                    output_lane_index, _ = next(balancer.output_lanes)
-                    while output_lane_index and output_lane_index <= previous_success do
-                        local lane = global.lanes[output_lane_index]
-                        if lane.can_insert_at_back() and lane.insert_at_back(item) then
-                            balancer.last_success = output_lane_index
-                            goto post_output
-                        end
-                        output_lane_index, _ = next(balancer.output_lanes, output_lane_index)
-                    end
-                end
-                lanes_left = false
             end
-
-            if output_index == 1 and gather_amount == 0 then
-                newbuffer = balancer.buffer
-                break
-            else
-                table.insert(newbuffer, item)
-            end
-
+            break
+            
             ::post_output::
-            output_index = output_index + 1
         end
-        balancer.buffer = newbuffer
     end
 end
 
