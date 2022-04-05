@@ -182,60 +182,59 @@ function balancer_functions.run(balancer_index)
     
     if table_size(balancer.input_lanes) > 0 and table_size(balancer.output_lanes) > 0 then
         local previous_success = balancer.last_success
-        local output_lane_index, _ = next(balancer.output_lanes, balancer.last_success)
+        local output_lane_index, output_lane = next(balancer.output_lanes, balancer.last_success)
         local previous_pickup = balancer.last_pickup
-        local input_lane_index, _ = next(balancer.input_lanes, balancer.last_pickup)
+        local input_lane_index, input_lane = next(balancer.input_lanes, balancer.last_pickup)
         while true do
-            local item = nil
-            local input_lane = nil
+--             local item = nil
             -- Input
-            while input_lane_index do -- we check input_lane_index first because it is faster
-                input_lane = global.lanes[input_lane_index]
+            while input_lane do -- we check input_lane_index first because it is faster
+--                 input_lane = global.lanes[input_lane_index]
                 if #input_lane > 0 then
                     -- remove item from lane and add to buffer
-                    item = input_lane[1]
+--                     item = input_lane[1]
                     goto output
                 end
-                input_lane_index, _ = next(balancer.input_lanes, input_lane_index)
+                input_lane_index, input_lane = next(balancer.input_lanes, input_lane_index)
             end
             if previous_pickup then
-                input_lane_index, _ = next(balancer.input_lanes)
+                input_lane_index, input_lane = next(balancer.input_lanes)
                 while input_lane_index and input_lane_index <= previous_pickup do
-                    input_lane = global.lanes[input_lane_index]
+--                     input_lane = global.lanes[input_lane_index]
                     if #input_lane > 0 then
                         -- remove item from lane and add to buffer
-                        item = input_lane[1]
+--                         item = input_lane[1]
                         goto output
                     end
-                    input_lane_index, _ = next(balancer.input_lanes, input_lane_index)
+                    input_lane_index, input_lane = next(balancer.input_lanes, input_lane_index)
                 end
             end
             break -- if no item was found then don't try to use it and give up
             -- Output
             ::output::
             while output_lane_index do -- we check output_lane_index first because it is faster
-                local lane = global.lanes[output_lane_index]
-                if lane.can_insert_at_back() and lane.insert_at_back(item) then
+--                 local lane = global.lanes[output_lane_index]
+                if output_lane.can_insert_at_back() and output_lane.insert_at_back(input_lane[1]) then
                     balancer.last_success = output_lane_index
-                    input_lane.remove_item(item)
+                    input_lane.remove_item(input_lane[1])
                     balancer.last_pickup = input_lane_index
-                    input_lane_index, _ = next(balancer.input_lanes, input_lane_index)
+                    input_lane_index, input_lane = next(balancer.input_lanes, input_lane_index)
                     goto post_output
                 end
-                output_lane_index, _ = next(balancer.output_lanes, output_lane_index)
+                output_lane_index, output_lane = next(balancer.output_lanes, output_lane_index)
             end
             if previous_success then
-                output_lane_index, _ = next(balancer.output_lanes)
+                output_lane_index, output_lane = next(balancer.output_lanes)
                 while output_lane_index and output_lane_index <= previous_success do
-                    local lane = global.lanes[output_lane_index]
-                    if lane.can_insert_at_back() and lane.insert_at_back(item) then
+--                     local lane = global.lanes[output_lane_index]
+                    if output_lane.can_insert_at_back() and output_lane.insert_at_back(input_lane[1]) then
                         balancer.last_success = output_lane_index
-                        input_lane.remove_item(item)
+                        input_lane.remove_item(input_lane[1])
                         balancer.last_pickup = input_lane_index
-                        input_lane_index, _ = next(balancer.input_lanes, input_lane_index)
+                        input_lane_index, input_lane = next(balancer.input_lanes, input_lane_index)
                         goto post_output
                     end
-                    output_lane_index, _ = next(balancer.output_lanes, output_lane_index)
+                    output_lane_index, output_lane = next(balancer.output_lanes, output_lane_index)
                 end
             end
             break
@@ -382,11 +381,11 @@ function balancer_functions.new_from_part_list(part_list)
         end
 
         -- add lanes to balancer
-        for _, lane in pairs(part.input_lanes) do
-            balancer.input_lanes[lane] = lane
+        for lane_index, lane in pairs(part.input_lanes) do
+            balancer.input_lanes[lane_index] = lane
         end
-        for _, lane in pairs(part.output_lanes) do
-            balancer.output_lanes[lane] = lane
+        for lane_index, lane in pairs(part.output_lanes) do
+            balancer.output_lanes[lane_index] = lane
         end
     end
 
