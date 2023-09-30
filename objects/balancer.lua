@@ -195,15 +195,18 @@ function balancer_functions.run(balancer_index)
             next_lanes = {}
 
             for k, lane in pairs(current_lanes) do
-                if #lane > 0 then
-                    -- remove item from lane and add to buffer
-                    local lua_item = lane[1]
-                    local simple_item = convert_LuaItemStack_to_SimpleItemStack(lua_item)
-                    lane.remove_item(lua_item)
-                    table.insert(balancer.buffer, simple_item)
-                    gather_amount = gather_amount - 1
+                local validLane = pcall(function () return #lane end)
+                if validLane then
+                    if #lane > 0 then
+                        -- remove item from lane and add to buffer
+                        local lua_item = lane[1]
+                        local simple_item = convert_LuaItemStack_to_SimpleItemStack(lua_item)
+                        lane.remove_item(lua_item)
+                        table.insert(balancer.buffer, simple_item)
+                        gather_amount = gather_amount - 1
 
-                    next_lanes[k] = lane
+                        next_lanes[k] = lane
+                    end
                 end
             end
             next_lane_count = table_size(next_lanes)
