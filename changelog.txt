@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 3.2.2
+Date: 07.25.2024
+  Bugfix:
+    - Fixed issue with balancer output speed capping at 120 items per second. Now caps at 480 items per belt (240 per belt lane)
+    - Fixed issue with curved belts from belt lines running beside balancer counting as valid output belts if the curved belt turned away from the balancer
+  Changes:
+    - Slightly improved performace, but still performance heavy if belt speeds are greater than 60 items per second.
+    - Added mod settings option for toggling curved output belt behavior (ignore cureved output belts by default)
+---------------------------------------------------------------------------------------------------
 Version: 3.2.0
 Date: 10.07.2023
   Bugfix:

@@ -18,12 +18,16 @@ Balancer.output_lanes = nil
 Balancer.unit_number = nil
 
 --- The buffer, where items are buffered.
----@type SimpleItemStack[]
+---@type {[string]:uint} 
 Balancer.buffer = nil
 
 --- The tick to run this balancer on
 ---@type uint
 Balancer.nth_tick = nil
+
+--- The next input lane to be checked.
+---@type uint
+Balancer.next_input = nil
 
 --- The next output lane to be checked.
 ---@type uint

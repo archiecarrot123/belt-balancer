@@ -1,20 +1,17 @@
----convert_LuaItemStack_to_SimpleItemStack
----@param lua_item_stack LuaItemStack
----@return SimpleItemStack
-function convert_LuaItemStack_to_SimpleItemStack(lua_item_stack)
-    local simple_item = {
-        name = lua_item_stack.name,
-        count = lua_item_stack.count,
-        health = lua_item_stack.health,
-        durability = lua_item_stack.durability,
-    }
-
-    local itemtype = lua_item_stack.prototype.type
-    if itemtype == "ammo" then
-        simple_item.ammo = lua_item_stack.ammo
-    elseif itemtype == "item-with-tags" then
-        simple_item.tags = lua_item_stack.tags
+---convert_items_from_input_to_buffer
+---@param balancer_index uint
+---@param next_input uint
+function convert_items_from_input_to_buffer(balancer_index, next_input)
+    local balancer = global.balancer[balancer_index]
+    local ilane = balancer.input_lanes[next_input]
+    local lane_size = #ilane
+    if lane_size > 0 then
+        for i = 1,lane_size do
+            balancer.buffer[#balancer.buffer + 1] = {
+                name = ilane[i].name,
+                count = ilane[i].count}
+        end
+        -- Will always dump entire lane contents (up to all 4 items on belt lane) into buffer, so clear lane contents
+        ilane.clear()
     end
-
-    return simple_item
 end
