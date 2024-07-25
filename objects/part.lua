@@ -214,6 +214,10 @@ function part_functions.remove(entity, buffer)
                     -- remove lanes from balancer
                     for _, lane_index in pairs(pos.lanes) do
                         local lane = belt.lanes[lane_index]
+                        -- make sure it doesn't pick this one next
+                        if balancer.next_input == lane then 
+                            balancer.next_input = next(balancer.input_lanes, balancer.next_input)
+                        end
                         balancer.input_lanes[lane] = nil
                     end
                 end
@@ -238,6 +242,10 @@ function part_functions.remove(entity, buffer)
 
             -- remove lanes from balancer
             for _, lane in pairs(belt.lanes) do
+                -- make sure it doesn't pick this one next
+                if balancer.next_input == lane then 
+                    balancer.next_input = next(balancer.input_lanes, balancer.next_input)
+                end
                 balancer.input_lanes[lane] = nil
             end
         end

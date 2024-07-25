@@ -186,6 +186,7 @@ end
 ---This is the functionality to call, when a new belt-entity is created
 ---@param belt LuaEntity The belt, that is being created
 function belt_functions.built_belt(belt)
+    local ignore_curved_belts_as_output = settings.global["belt-balancer-performace-ignoreCurvedOutputBelts"].value
     -- get nearby balancer
     local into_part, from_part = belt_functions.get_input_output_parts(belt)
 
@@ -194,6 +195,15 @@ function belt_functions.built_belt(belt)
             into_part = nil
         elseif belt.belt_to_ground_type == "output" then
             from_part = nil
+        end
+    end
+
+    -- Fix curved belts on lines beside balancer counting as output lines
+    if ignore_curved_belts_as_output == true then
+        if belt.type == "transport-belt" then
+            if belt.belt_shape ~= "straight" then
+                from_part = nil
+            end
         end
     end
 
@@ -330,6 +340,10 @@ function belt_functions.remove_belt(entity, direction, unit_number, surface, pos
 
         local balancer = global.balancer[into_part.balancer]
         for _, lane in pairs(belt.lanes) do
+            -- make sure it doesn't pick this one next
+            if balancer.next_input == lane then 
+                balancer.next_input = next(balancer.input_lanes, balancer.next_input)
+            end
             -- remove lanes from balancer
             balancer.input_lanes[lane] = nil
             -- remove lanes from part
@@ -397,6 +411,10 @@ function belt_functions.remove_splitter(entity, direction, unit_number, surface,
 
         local balancer = global.balancer[part.part.balancer]
         for _, lane in pairs(belt.lanes) do
+            -- make sure it doesn't pick this one next
+            if balancer.next_input == lane then 
+                balancer.next_input = next(balancer.input_lanes, balancer.next_input)
+            end
             -- remove lanes from balancer
             balancer.input_lanes[lane] = nil
             -- remove lanes from part
