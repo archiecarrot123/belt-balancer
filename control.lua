@@ -95,24 +95,19 @@ end
 ---if so, remove the fast-replaced entity from tracking.
 ---@param new_entity LuaEntity
 function process_fast_replace(new_entity)
-    local belts = {}
-
-    for unit_number, belt in pairs(global.belts) do
-        -- only run, when entities overlapping and are on the same surface
-        if new_entity.surface == belt.surface
-            and  belt.position.x >= new_entity.position.x - 0.5 and belt.position.x <= new_entity.position.x + 0.5
-            and belt.position.y >= new_entity.position.y - 0.5 and belt.position.y <= new_entity.position.y + 0.5 then
-
-            belts[unit_number] = belt
-        end
-    end
-
-    for unit_number, belt in pairs(belts) do
-        -- remove fast-replaced invalid entity
-        if belt.type == "splitter" then
-            belt_functions.remove_splitter(belt.entity, belt.direction, unit_number, belt.surface, belt.position)
-        else
-            belt_functions.remove_belt(belt.entity, belt.direction, unit_number, belt.surface, belt.position)
+    local belt
+    for _, entity in pairs(new_entity.surface.find_entities_filtered{
+        position = {new_entity.position.x, new_entity.position.y},
+        type = {"transport-belt", "underground-belt", "splitter"}
+    }) do
+        belt = global.belts[entity.unit_number]
+        if belt then
+            -- remove fast-replaced invalid entity
+            if belt.type == "splitter" then
+                belt_functions.remove_splitter(belt.entity, belt.direction, unit_number, belt.surface, belt.position)
+            else
+                belt_functions.remove_belt(belt.entity, belt.direction, unit_number, belt.surface, belt.position)
+            end
         end
     end
 end
